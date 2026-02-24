@@ -24,6 +24,13 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- ASM для анализа байткода в тестах -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.8</version>
+            <scope>test</scope>
+        </dependency>
         <!-- Jackson для чтения JSON в тестах -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

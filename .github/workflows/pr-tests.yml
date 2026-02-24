@@ -36,13 +36,99 @@ jobs:
       
       - name: Copy test files
         run: |
-          echo "Copying test data"
-          mkdir -p src/test/resources
+          echo "Copying hidden tests"
+          mkdir -p src/test/java src/test/resources
+          cp -R hidden-tests/src/test/java/. src/test/java/
           cp -R hidden-tests/src/test/resources/. src/test/resources/
           echo ""
           echo "Скопированы файлы:"
-          find src/test/resources -type f | sort | while read f; do echo "  $f"; done
+          find src/test/java src/test/resources -type f | sort | while read f; do echo "  $f"; done
           rm -rf hidden-tests
-      
+
+      - name: Select test pattern from commit message
+        id: select_tests
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setOutput('pattern', '');
+              return;
+            }
+            const repo = { owner: context.repo.owner, repo: context.repo.repo };
+            const { data: commit } = await github.rest.repos.getCommit({
+              ...repo,
+              ref: pr.head.sha
+            });
+            const msg = (commit.commit.message || '').toLowerCase();
+
+            const patterns = [];
+            const add = (p) => { if (!patterns.includes(p)) patterns.push(p); };
+
+            if (msg.startsWith('atm:')) add('**/atm/*Test');
+            if (msg.startsWith('html:')) add('**/html/*Test');
+            if (msg.startsWith('randomset:')) add('**/randomSet/*Test');
+            if (msg.startsWith('cube:')) add('**/CubeSimpleTest');
+
+            core.setOutput('pattern', patterns.length ? patterns.join(',') : '');
+
+      - name: Run honors no-collections test
+        id: honors_test
+        continue-on-error: true
+        if: steps.select_tests.outputs.pattern == '**/randomSet/*Test'
+        run: mvn -B -Dtest=hse.java.lectures.lecture3.practice.randomSet.RandomSetBytecodeTest test
+
+      - name: Comment on PR for honors solution
+        if: steps.honors_test.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No PR context, skipping comment.');
+              return;
+            }
+            const body = [
+              'Поздравляем! 🎉',
+              '',
+              'Вы решили сложную версию: решение прошло проверку «без коллекций».'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            });
+
       - name: Run tests
-        run: mvn -B test
+        run: |
+          if [ -n "${{ steps.select_tests.outputs.pattern }}" ]; then
+            echo "Running selected tests: ${{ steps.select_tests.outputs.pattern }}"
+            mvn -B -Dtest='${{ steps.select_tests.outputs.pattern }},!**/RandomSetBytecodeTest' test
+          else
+            echo "No task prefix found. Failing."
+            exit 1
+          fi
+
+      - name: Comment on PR when no task prefix
+        if: steps.select_tests.outputs.pattern == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No PR context, skipping comment.');
+              return;
+            }
+            const body = [
+              'Тесты не запускались.',
+              '',
+              'Укажите задачу в начале сообщения коммита:',
+              'atm: ..., html: ..., randomset: ...'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            });

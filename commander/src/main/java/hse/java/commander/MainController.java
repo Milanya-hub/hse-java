@@ -1,12 +1,21 @@
 package hse.java.commander;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 
 public class MainController {
 
-   public void initialize() {
+    @FXML
+    public Button move;
+
+    public void initialize() {
+        move.setOnMouseClicked(event -> {
+
+        });
+        System.out.println(System.getProperty("user.home"));
        left.getItems().add("Kek");
+
        left.setOnMouseClicked(event -> {
            if (event.getClickCount() == 2) {
                int index = left.getSelectionModel().getSelectedIndex();

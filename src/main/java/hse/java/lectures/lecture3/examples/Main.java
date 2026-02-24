@@ -14,5 +14,6 @@ public class Main {
 
         Box<? extends Number> nBox = box;
         new Methods().get(new ArrayList<Integer>()).add(1);
+
     }
 }
