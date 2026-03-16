@@ -28,13 +28,10 @@ public class MainController {
     private Path rightPath;
     private ListView<String> Panel;
 
-    private Path leftDir;
-    private Path rightDir;
-
     // for testing
     public void setInitialDirs(Path leftStart, Path rightStart) {
-        this.leftDir = leftStart;
-        this.rightDir = rightStart;
+        this.leftPath = leftStart;
+        this.rightPath = rightStart;
         update();
     }
 
