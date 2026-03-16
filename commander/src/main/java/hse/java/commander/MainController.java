@@ -58,6 +58,10 @@ public class MainController {
                 open(right);
             }
         });
+
+        copy.setOnAction(e -> copy());
+        move.setOnAction(e -> move());
+        delete.setOnAction(e -> delete());
     }
 
     private void dir(ListView<String> panel, Path path) {
