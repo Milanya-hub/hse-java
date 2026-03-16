@@ -36,12 +36,14 @@ public class MainController {
     }
 
     public void initialize() {
-        leftPath = Paths.get(System.getProperty("user.dir"));
-        rightPath = Paths.get(System.getProperty("user.dir"));
-
+        if (leftPath == null) {
+            leftPath = Paths.get(System.getProperty("user.dir"));
+        }
+        if (rightPath == null) {
+            rightPath = Paths.get(System.getProperty("user.dir"));
+        }
         Panel = left;
-        dir(left, leftPath);
-        dir(right, rightPath);
+        update();
 
         left.setOnMouseClicked(e -> {
             Panel = left;
