@@ -37,10 +37,10 @@ public class MainController {
 
     public void initialize() {
         if (leftPath == null) {
-            leftPath = Paths.get(System.getProperty("user.dir"));
+            leftPath = Paths.get(System.getProperty("user.home"));
         }
         if (rightPath == null) {
-            rightPath = Paths.get(System.getProperty("user.dir"));
+            rightPath = Paths.get(System.getProperty("user.home"));
         }
         Panel = left;
         update();
