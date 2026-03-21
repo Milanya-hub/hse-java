@@ -1,5 +1,6 @@
 package hse.java.lectures.lecture6.tasks.synchronizer;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -23,15 +24,16 @@ public class Synchronizer {
      * in strict ascending id order.
      */
     public void execute() {
-        tasks.sort(Comparator.comparingInt(StreamWriter::getId));
+        List<StreamWriter> sorted = new ArrayList<>(tasks);
+        sorted.sort(Comparator.comparingInt(StreamWriter::getId));
 
-        StreamingMonitor monitor = new StreamingMonitor(tasks, ticksPerWriter);
+        StreamingMonitor monitor = new StreamingMonitor(sorted, ticksPerWriter);
 
-        for (StreamWriter writer : tasks) {
+        for (StreamWriter writer : sorted) {
             writer.attachMonitor(monitor);
         }
 
-        for (StreamWriter writer : tasks) {
+        for (StreamWriter writer : sorted) {
             Thread worker = new Thread(writer, "stream-writer-" + writer.getId());
             worker.setDaemon(true);
             worker.start();
