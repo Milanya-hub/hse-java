@@ -1,5 +1,6 @@
 package hse.java.lectures.lecture6.tasks.synchronizer;
 
+import java.io.PrintStream;
 import java.util.*;
 public class StreamingMonitor {
     private final List<StreamWriter> writers;
@@ -50,11 +51,17 @@ public class StreamingMonitor {
         }
     }
 
-    public synchronized boolean work_tick(int id) {
+    public synchronized boolean work_tick(int id, String message, PrintStream output, Runnable onTick) throws InterruptedException {
+        while (!can_run(id)) {
+            wait();
+        }
+
         if (cnt_ticks >= max_cnt_ticks) {
             notifyAll();
             return false;
         }
+        output.print(message);
+        onTick.run();
         done_ticks.put(id, done_ticks.get(id) + 1);
         cnt_ticks++;
         next();
