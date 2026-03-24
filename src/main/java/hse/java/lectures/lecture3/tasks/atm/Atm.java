@@ -1,14 +1,9 @@
 package hse.java.lectures.lecture3.tasks.atm;
 
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Atm {
-    private enum Denomination {
+    public enum Denomination {
         D50(50),
         D100(100),
         D500(500),
@@ -24,6 +19,12 @@ public class Atm {
         int value() {
             return value;
         }
+
+        public static Denomination fromInt(int value) {
+            return Arrays.stream(values()).filter(v -> v.value == value)
+                    .findFirst()
+                    .orElse(null);
+        }
     }
 
     private final Map<Denomination, Integer> banknotes = new EnumMap<>(Denomination.class);
@@ -31,9 +32,9 @@ public class Atm {
     public Atm() {
     }
 
-    public void deposit(Map<Integer, Integer> banknotes){}
+    public void deposit(Map<Denomination, Integer> banknotes){}
 
-    public Map<Integer, Integer> withdraw(int amount) {
+    public Map<Denomination, Integer> withdraw(int amount) {
         return Map.of();
     }
 

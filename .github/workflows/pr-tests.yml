@@ -36,13 +36,117 @@ jobs:
       
       - name: Copy test files
         run: |
-          echo "Copying test data"
-          mkdir -p src/test/resources
+          echo "Copying hidden tests"
+          mkdir -p src/test/java src/test/resources
+          cp -R hidden-tests/src/test/java/. src/test/java/
           cp -R hidden-tests/src/test/resources/. src/test/resources/
+          cp -R hidden-tests/commander/src/test/. commander/src/test/
           echo ""
           echo "Скопированы файлы:"
-          find src/test/resources -type f | sort | while read f; do echo "  $f"; done
+          find src/test/java src/test/resources -type f | sort | while read f; do echo "  $f"; done
+          echo "Скопированы файлы (модуль commander):"
+          find commander/src/test -type f | sort | while read f; do echo "  $f"; done
           rm -rf hidden-tests
-      
+
+      - name: Select test tag from commit message
+        id: select_tests
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setOutput('tag', '');
+              return;
+            }
+            const repo = { owner: context.repo.owner, repo: context.repo.repo };
+            const { data: commit } = await github.rest.repos.getCommit({
+              ...repo,
+              ref: pr.head.sha
+            });
+            const msg = (commit.commit.message || '').toLowerCase();
+
+            let tag = '';
+            const idx = msg.indexOf(':');
+            if (idx > 0) {
+              tag = msg.slice(0, idx).trim();
+            }
+
+            core.setOutput('tag', tag);
+            core.setOutput('hard_tag', tag ? `${tag}-hard` : '');
+
       - name: Run tests
-        run: mvn -B test
+        run: |
+          if [ -n "${{ steps.select_tests.outputs.tag }}" ]; then
+            echo "Running tests for tag: ${{ steps.select_tests.outputs.tag }}"
+            mvn -B -Dgroups='${{ steps.select_tests.outputs.tag }}' test
+          else
+            echo "No tag found in commit message prefix."
+            echo "Use format: <tag>: <message>. Example: atm: implement withdraw validation"
+            exit 1
+          fi
+
+      - name: Run hard tests (non-blocking)
+        id: hard_test
+        continue-on-error: true
+        if: steps.select_tests.outputs.tag != ''
+        run: |
+          echo "Running hard tests for tag: ${{ steps.select_tests.outputs.hard_tag }}"
+          mvn -B -DfailIfNoTests=false -Dgroups='${{ steps.select_tests.outputs.hard_tag }}' test
+
+      - name: Install Xvfb (virtual display for JavaFX/TestFX)
+        if: steps.select_tests.outputs.tag == 'commander'
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: UI test
+        if: steps.select_tests.outputs.tag == 'commander'
+        run: |
+          echo "Running UI tests (модуль commander)"
+          xvfb-run -a mvn -q -f commander/pom.xml -Dgroups='commander' test
+
+      - name: Comment on PR for hard tests success
+        if: steps.select_tests.outputs.tag != '' && steps.hard_test.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No PR context, skipping comment.');
+              return;
+            }
+            const baseTag = `${{ steps.select_tests.outputs.tag }}`;
+            const body = [
+              'Поздравляем!',
+              '',
+              `Пройден усложненный набор тестов для задачи \`${baseTag}\`.`
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            });
+
+      - name: Comment on PR when no task prefix
+        if: steps.select_tests.outputs.tag == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No PR context, skipping comment.');
+              return;
+            }
+            const body = [
+              'Тесты не запускались.',
+              '',
+              'Укажите тег в начале сообщения коммита в формате `<tag>: ...`.',
+              'Например: `atm: реализовал валидацию суммы`',
+              '',
+              'Примеры тегов: atm, html, randomset'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            });

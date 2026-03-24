@@ -3,12 +3,14 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox fx:controller="hse.java.commander.MainController"
-        maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="421.0" prefWidth="627.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="421.0" prefWidth="627.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hse.java.commander.MainController">
     <HBox prefHeight="370.0" prefWidth="627.0">
-
-        <ListView fx:id="left" prefHeight="318.0" prefWidth="311.0" />
-        <ListView fx:id="right" prefHeight="318.0" prefWidth="321.0" />
-
+        <ListView fx:id="left" id="left" prefHeight="318.0" prefWidth="311.0" />
+        <ListView fx:id="right" id="right" prefHeight="318.0" prefWidth="321.0" />
+    </HBox>
+    <HBox spacing="10.0">
+        <Button fx:id="copy" mnemonicParsing="false" text="Copy" />
+        <Button fx:id="move" mnemonicParsing="false" text="Move" />
+        <Button fx:id="delete" mnemonicParsing="false" text="Delete" />
     </HBox>
 </VBox>
